@@ -56,8 +56,21 @@ class NoteOn(Message):
         return self.getMessage()
     def playNoteFromScale(self, scale, root, interval, intensity):
         # figure out way to index negatively or more than 7 for scale tables
-        note = self.freqTable[root] + self.scaleTable[scale][interval]
-        self.setMessage(note, intensity)
+        root = self.freqTable[root]
+        if interval > 6:
+            # up an octave
+            root += (12 * (interval/7))
+            interval %= 7
+        elif interval < 0:
+            root += (12 * (interval/7))
+            interval = (-interval)%7
+        note = root + self.scaleTable[scale][interval]
+        if note > 0 and note < 127:
+            self.setMessage(note, intensity)
+        elif note > 127:
+            self.setMessage(127, intensity)
+        else:
+            self.setMessage(0, intensity)
         return self.getMessage()
 
 class NoteOff(Message):
@@ -139,12 +152,32 @@ class MonoAfterTouch(Message):
     def __init__(self, channel, value=None):
         self.channel = channel-1
         self.value = value
-
+        super(MonoAfterTouch, self).__init__()
     def setMessage(self, value):
         self.value = value
         self.byte_1 = (0xd << 4) + self.channel
         self.byte_2 = value
         self.byte_3 = 0
+
+    def getNoteFromScale(self, scale, root, interval):
+        # figure out way to index negatively or more than 7 for scale tables
+        root = self.freqTable[root]
+        if interval > 6:
+            # up an octave
+            root += (12 * (interval/7))
+            interval %= 7
+        elif interval < 0:
+            root += (12 * (interval/7))
+            interval = (-interval)%7
+        note = root + self.scaleTable[scale][interval]
+        if note > 0 and note < 127:
+            self.setMessage(note)
+        elif note > 127:
+            self.setMessage(127)
+        else:
+            self.setMessage(0)
+        return self.getMessage()
+
 
 class PitchWheelChange(Message):
     ''' This message is sent to indicate a change in the pitch wheel.
@@ -189,6 +222,7 @@ class AllSoundOff(ChannelMode):
         channel 1-16'''
     def __init__(self, channel):
         super(AllSoundOff, self).__init__(channel, 120, 0)
+        super(AllSoundOff, self).setMessage(120, 0)
 
 class ResetAllControllers(ChannelMode):
     ''' When Reset All Controllers is received, all controller

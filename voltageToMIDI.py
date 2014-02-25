@@ -16,11 +16,18 @@ else:
     midiout.open_virtual_port("My virtual output")
 
 noteOn = mp.NoteOn(1)
-for i in range(7):
-    midiout.send_message(noteOn.playNoteFromScale('major', 'A0', i%7, 100))
-    print noteOn.note
-    time.sleep(.5)
-midiout.send_message(noteOn.playNoteFromScale('major', 'A1', 0, 100))
+for i in range(15):
+    midiout.send_message(noteOn.playNoteFromScale('major', 'A0', i, 100))
+    time.sleep(.1)
+for i in range(16,-10,-3):
+    midiout.send_message(noteOn.playNoteFromScale('major', 'A0', i, 100))
+    time.sleep(.07)
+afterTouch = mp.MonoAfterTouch(1)
+midiout.send_message(afterTouch.getNoteFromScale('major', 'A0', -10))
+time.sleep(.5)
+notesOff = mp.AllSoundOff(1)
+midiout.send_message(notesOff.getMessage())
+#midiout.send_message(noteOn.playNoteFromScale('major', 'A1', 0, 100))
 
 # 33 = A0
 # 127 = G8
